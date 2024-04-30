@@ -1,6 +1,6 @@
 // PostsPage.js
 import React, { useState, useEffect } from 'react';
-import { useParams, useHistory, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Table, Select, Input } from 'antd';
 import queryString from 'query-string';
 
@@ -12,16 +12,19 @@ const PostsPage = () => {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const [filters, setFilters] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const history = useHistory();
+  const navigate = useNavigate();
   const { search } = useLocation();
   const { skip, limit } = useParams();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`https://dummyjson.com/posts?skip=${skip}&limit=${limit}`);
+        // Parse skip and limit from URL params, use defaults if not present
+        const skipParam = parseInt(skip) || 0;
+        const limitParam = parseInt(limit) || 10;
+        const response = await fetch(`https://dummyjson.com/posts?skip=${skipParam}&limit=${limitParam}`);
         const data = await response.json();
-        setPosts(data);
+        setPosts(data.posts);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -39,17 +42,17 @@ const PostsPage = () => {
 
   const handlePaginationChange = (page) => {
     setPagination({ ...pagination, current: page });
-    history.push(`/?page=${page}&filters=${filters.join(',')}&searchQuery=${searchQuery}`);
+    navigate(`/?page=${page}&filters=${filters.join(',')}&searchQuery=${searchQuery}`);
   };
 
   const handleFilterChange = (values) => {
     setFilters(values);
-    history.push(`/?page=${pagination.current}&filters=${values.join(',')}&searchQuery=${searchQuery}`);
+    navigate(`/?page=${pagination.current}&filters=${values.join(',')}&searchQuery=${searchQuery}`);
   };
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    history.push(`/?page=${pagination.current}&filters=${filters.join(',')}&searchQuery=${e.target.value}`);
+    navigate(`/?page=${pagination.current}&filters=${filters.join(',')}&searchQuery=${e.target.value}`);
   };
 
   const filteredPosts = posts.filter(post => {
@@ -82,7 +85,7 @@ const PostsPage = () => {
         pagination={{ ...pagination, total: filteredPosts.length }}
         onChange={handlePaginationChange}
         rowKey="id"
-        // Columns for table
+      // Columns for table
       />
     </Content>
   );
